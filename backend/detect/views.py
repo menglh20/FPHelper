@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from detect.Detect import detect
 from common.models import Result, User
 from django.http import JsonResponse
 import datetime
@@ -11,6 +10,8 @@ import time
 def detection(request):
     if request.method == "POST":
         name = request.POST.get("name")
+        result = request.POST.get("result")
+        detail = request.POST.get("detail")
         pic_at_rest = request.FILES.get("pic_at_rest")
         pic_forehead_wrinkle = request.FILES.get("pic_forehead_wrinkle")
         pic_eye_closure = request.FILES.get("pic_eye_closure")
@@ -23,8 +24,6 @@ def detection(request):
                 "code": 400,
                 "message": "User does not exist"
             })
-
-        start_t = time.time()
 
         current_time = datetime.datetime.now()
         current_time = current_time.strftime("%Y.%m.%d %H:%M:%S")
@@ -56,21 +55,17 @@ def detection(request):
             for chunk in pic_lip_pucker.chunks():
                 f.write(chunk)
 
-        record = Result(name=name, result=0, detail="", comment="检测中", save_path=save_path, time=current_time)
+        record = Result(name=name, result=0, detail="检测中", comment="", save_path=save_path, time=current_time)
         record.save()
 
         try:
-            result, detail = detect(save_path, debug=False)
-
             record.result = result
-            record.detail = detail
+            record.detail = str(detail)
             record.save()
-
-            end_t = time.time()
 
             return JsonResponse({
                 "code": 200,
-                "time": round(end_t - start_t, 2),
+                "time": current_time,
                 "result": result,
                 "detail": detail,
             })

@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 *.jpg
+test/
+.DS_Store

@@ -148,16 +148,45 @@ def upload_comment(request):
         })
 
 
+# 内部接口
 def clear(request):
     if request.method == "POST":
         secret_key = request.POST.get("secret_key")
-        if secret_key == "123456":
-            Result.objects.all().delete()
+        if secret_key != "123456":
             return JsonResponse({
-                "code": 200,
-                "message": "Clear success"
+                "code": 400,
+                "message": "Invalid secret key"
             })
+        Result.objects.all().delete()
+    else:
         return JsonResponse({
             "code": 400,
-            "message": "Invalid secret key"
+            "message": "Invalid request"
+        })
+        
+
+def get_all(request):
+    if request.method == "POST":
+        secret_key = request.POST.get("secret_key")
+        if secret_key != "123456":
+            return JsonResponse({
+                "code": 400,
+                "message": "Invalid secret key"
+            })
+        results = Result.objects.all().order_by("name")
+        return JsonResponse({
+            "code": 200,
+            "results": [{
+                "id": result.id,
+                "name": result.name,
+                "result": result.result,
+                "time": result.time,
+                "detail": result.detail,
+                "comment": result.comment
+            } for result in results]
+        })
+    else:
+        return JsonResponse({
+            "code": 400,
+            "message": "Invalid request"
         })

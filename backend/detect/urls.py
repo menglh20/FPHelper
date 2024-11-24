@@ -6,4 +6,5 @@ urlpatterns = [
     path("history/", views.history),
     path("comment/", views.upload_comment),
     path("clear/", views.clear),
+    path("get_all/", views.get_all)
 ]

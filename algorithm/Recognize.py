@@ -62,7 +62,7 @@ def calc_alarbase(landmarks):
     r_alarbase = r_alarbase_x - mid_alarbase_x
     return l_alarbase, r_alarbase
 
-def recognize(video_path, debug=False):
+def recognize(video_path, output_path, debug=False):
     results = {
         'forehead_wrinkle': [],
         'eye_closure': [],
@@ -111,6 +111,7 @@ def recognize(video_path, debug=False):
             results['lip_pucker'].append(mouth_distance)
             
             n += 1
+            
     # draw ratio changes
     if debug:
         for key in results:
@@ -120,8 +121,8 @@ def recognize(video_path, debug=False):
             plt.legend()
             plt.savefig("../test/" + key + ".png")
             plt.close()
+            
     # Cut according image
-    output_path = "../test/pic/"
     os.makedirs(output_path, exist_ok=True)
     
     index_forehead_wrinkle = np.argmax(results['forehead_wrinkle'])
@@ -129,11 +130,13 @@ def recognize(video_path, debug=False):
     index_smile = np.argmin(results['smile'])
     index_snarl = np.argmax(results['snarl'])
     index_lip_pucker = np.argmax(results['lip_pucker'])
-    print("forehead_wrinkle: ", index_forehead_wrinkle)
-    print("eye_closure: ", index_eye_closure)
-    print("smile: ", index_smile)
-    print("snarl: ", index_snarl)
-    print("lip_pucker: ", index_lip_pucker)
+    if debug:
+        print("forehead_wrinkle: ", index_forehead_wrinkle)
+        print("eye_closure: ", index_eye_closure)
+        print("smile: ", index_smile)
+        print("snarl: ", index_snarl)
+        print("lip_pucker: ", index_lip_pucker)
+
     
     cap = cv2.VideoCapture(video_path)
     for i in range(total_frames):
@@ -154,4 +157,6 @@ def recognize(video_path, debug=False):
 
 
 if __name__ == "__main__":
-    recognize("../test/video.mp4", debug=True)
+    video_path = "../test/video.mp4"
+    output_path = "../test/pic/"
+    recognize(video_path, output_path, debug=True)

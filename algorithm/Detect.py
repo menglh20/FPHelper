@@ -129,7 +129,7 @@ def calc(images):
     detail = {
         'rest symmetry': {'eye': 0, 'cheek': 0, 'mouth': 0},
         'voluntary symmetry': {'forehead wrinkle': 0, 'eye closure': 0, 'smile': 0, 'snarl': 0, 'lip pucker': 0},
-        'synkinesis': {'forehead wrinkle': 0, 'eye closure': 0, 'smile': 0, 'snarl': 0, 'lip pucker': 0},
+        'synkinesis': {'forehead_wrinkle': 0, 'eye_closure': 0, 'smile': 0, 'snarl': 0, 'lip_pucker': 0},
     }
 
     with FaceLandmarker.create_from_options(options) as landmarker:
@@ -152,19 +152,19 @@ def calc(images):
             landmarks = landmarker.detect(image).face_landmarks[0]
             if key == "pic_forehead_wrinkle":
                 eyebrow_ratio = calc_eyebrow_ratio(landmarks)
-                detail['voluntary symmetry']['forehead wrinkle'] = int(5 * eyebrow_ratio)
+                detail['voluntary symmetry']['forehead wrinkle'] = int(5 * eyebrow_ratio) + 1
             elif key == "pic_eye_closure":
                 eyeclosure_ratio = calc_eyeclosure_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['eye closure'] = int(5 * eyeclosure_ratio)
+                detail['voluntary symmetry']['eye closure'] = int(5 * eyeclosure_ratio) + 1
             elif key == "pic_smile":
                 smile_ratio = calc_smile_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['smile'] = int(5 * smile_ratio)
+                detail['voluntary symmetry']['smile'] = int(5 * smile_ratio) + 1
             elif key == "pic_snarl":
                 snarl_ratio = calc_snarl_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['snarl'] = int(5 * snarl_ratio)
+                detail['voluntary symmetry']['snarl'] = int(5 * snarl_ratio) + 1
             elif key == "pic_lip_pucker":
                 lip_pucker_ratio = calc_lip_pucker_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['lip pucker'] = int(5 * lip_pucker_ratio)
+                detail['voluntary symmetry']['lip pucker'] = int(5 * lip_pucker_ratio) + 1
         
         # synkinesis
         for key, image in images.items():
@@ -172,15 +172,15 @@ def calc(images):
                 continue
             landmarks = landmarker.detect(image).face_landmarks[0]
             ratios = {
-                "forehead wrinkle": calc_eyebrow_ratio(landmarks),
-                "eye closure": calc_eyeclosure_ratio(landmarks, resting_landmarks),
+                "forehead_wrinkle": calc_eyebrow_ratio(landmarks),
+                "eye_closure": calc_eyeclosure_ratio(landmarks, resting_landmarks),
                 "smile": calc_smile_ratio(landmarks, resting_landmarks),
                 "snarl": calc_snarl_ratio(landmarks, resting_landmarks),
-                "lip pucker": calc_lip_pucker_ratio(landmarks, resting_landmarks)
+                "lip_pucker": calc_lip_pucker_ratio(landmarks, resting_landmarks)
             }
-            other_ratios = [ratio for k, ratio in ratios.items() if k != key.split('_')[1]]
+            other_ratios = [ratio for k, ratio in ratios.items() if k != key.replace("pic_", '')]
             min_ratio = min(other_ratios)
-            detail['synkinesis'][key.split('_')[1]] = int(3 * (1 - min_ratio))
+            detail['synkinesis'][key.replace("pic_", '')] = int(3 * (1 - min_ratio))
 
     return detail
 

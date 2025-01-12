@@ -3,80 +3,52 @@ from common.models import Result, User
 from django.http import JsonResponse
 import datetime
 import time
-
+from detect.Download import DownloadImage
+from detect.Detect import detect
+import json
 # Create your views here.
 
 
 def detection(request):
+    print("start detect")
+    print(request)
     if request.method == "POST":
-        name = request.POST.get("name")
-        result = request.POST.get("result")
-        detail = request.POST.get("detail")
-        # pic_at_rest = request.FILES.get("pic_at_rest")
-        # pic_forehead_wrinkle = request.FILES.get("pic_forehead_wrinkle")
-        # pic_eye_closure = request.FILES.get("pic_eye_closure")
-        # pic_smile = request.FILES.get("pic_smile")
-        # pic_snarl = request.FILES.get("pic_snarl")
-        # pic_lip_pucker = request.FILES.get("pic_lip_pucker")
-        
-        print(name + " is uploading detection result")
-
-        if not User.objects.filter(name=name).exists():
-            return JsonResponse({
-                "code": 400,
-                "message": "User does not exist"
-            })
-
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        name = body["name"]
+        fileID = body["fileID"]
+        print("fileID")
+        print(fileID)
+        # logger.info(f"[detect] Detection result: {name}")
+        # if not User.objects.filter(name=name).exists():
+        #     logger.info(f"[detect] User does not exist: {name}")
+        #     return JsonResponse({
+        #         "code": 400,
+        #         "message": "User does not exist"
+        #     })
         current_time = datetime.datetime.now()
         current_time = current_time.strftime("%Y.%m.%d %H:%M:%S")
         save_name = current_time.replace(".", "").replace(":", "")
-
         save_path = f"media/{name}_{save_name}/"
+        # record = Result(name=name, result=0, detail="获取图片中", comment="", save_path=save_path, time=current_time)
+        # record.save()
 
-        # with open(save_path + "pic_at_rest.jpg", "wb") as f:
-        #     for chunk in pic_at_rest.chunks():
-        #         f.write(chunk)
-                
-        # with open(save_path + "pic_forehead_wrinkle.jpg", "wb") as f:
-        #     for chunk in pic_forehead_wrinkle.chunks():
-        #         f.write(chunk)
-                
-        # with open(save_path + "pic_eye_closure.jpg", "wb") as f:
-        #     for chunk in pic_eye_closure.chunks():
-        #         f.write(chunk)
-                
-        # with open(save_path + "pic_smile.jpg", "wb") as f:
-        #     for chunk in pic_smile.chunks():
-        #         f.write(chunk)
-                
-        # with open(save_path + "pic_snarl.jpg", "wb") as f:
-        #     for chunk in pic_snarl.chunks():
-        #         f.write(chunk)
-                
-        # with open(save_path + "pic_lip_pucker.jpg", "wb") as f:
-        #     for chunk in pic_lip_pucker.chunks():
-        #         f.write(chunk)
-
-        record = Result(name=name, result=0, detail="检测中", comment="", save_path=save_path, time=current_time)
-        record.save()
-
-        try:
-            record.result = result
-            record.detail = str(detail)
-            record.save()
-
-            return JsonResponse({
-                "code": 200,
-                "time": current_time,
-                "result": result,
-                "detail": detail,
-            })
-        except Exception as e:
-            print(str(e))
-            return JsonResponse({
-                "code": 500,
-                "message": str(e)
-            })
+        downloadImage = DownloadImage()
+        downloadImage.get(fileID, save_path)
+        result, detail = detect(save_path)
+        # record.result = result
+        # record.detail = str(detail)
+        # record.save()
+        # logger.info(f"[detect] Detection success: {name} {result} {detail}")
+        print("Detect Finished!")
+        print(result)
+        print(detail)
+        return JsonResponse({
+            "code": 200,
+            "time": current_time,
+            "result": result,
+            "detail": detail,
+        })
     else:
         return JsonResponse({
             "code": 400,

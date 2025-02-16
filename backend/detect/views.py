@@ -3,7 +3,7 @@ from common.models import Result, User
 from django.http import JsonResponse
 import datetime
 import time
-from detect.Download import DownloadImage
+from detect.Download import DownloadImage, DownloadVideo
 from detect.Detect import detect
 import json
 # Create your views here.
@@ -40,6 +40,61 @@ def detection(request):
         # record.detail = str(detail)
         # record.save()
         # logger.info(f"[detect] Detection success: {name} {result} {detail}")
+        print("Detect Finished!")
+        print(result)
+        print(detail)
+        return JsonResponse({
+            "code": 200,
+            "time": current_time,
+            "result": result,
+            "detail": detail,
+        })
+    else:
+        return JsonResponse({
+            "code": 400,
+            "message": "Invalid request"
+        })
+
+
+def detect_by_video(request):
+    print("start detect by video")
+    print(request)
+    if request.method == "POST":
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        name = body["name"]
+        fileID = body["fileID"]
+        print("fileID")
+        print(fileID)
+        # logger.info(f"[detect] Detection result: {name}")
+        # if not User.objects.filter(name=name).exists():
+        #     logger.info(f"[detect] User does not exist: {name}")
+        #     return JsonResponse({
+        #         "code": 400,
+        #         "message": "User does not exist"
+        #     })
+        current_time = datetime.datetime.now()
+        current_time = current_time.strftime("%Y.%m.%d %H:%M:%S")
+        save_name = current_time.replace(".", "").replace(":", "")
+        save_path = f"media/{name}_{save_name}/"
+        # record = Result(name=name, result=0, detail="获取图片中", comment="", save_path=save_path, time=current_time)
+        # record.save()
+
+        downloadVideo = DownloadVideo()
+        downloadVideo.get(fileID, save_path)
+        
+        # TODO: cut video into pic and get pic_save_path
+        # pic_save_path = recognize(save_path)
+        # result, detail = detect(pic_save_path)
+        
+        # MOCk
+        result = 100
+        detail = {
+            'rest symmetry': {'eye': 0, 'cheek': 0, 'mouth': 0},
+            'voluntary symmetry': {'forehead wrinkle': 5, 'eye closure': 5, 'smile': 5, 'snarl': 5, 'lip pucker': 5},
+            'synkinesis': {'forehead_wrinkle': 0, 'eye_closure': 0, 'smile': 0, 'snarl': 0, 'lip_pucker': 0},
+        }
+        
         print("Detect Finished!")
         print(result)
         print(detail)

@@ -58,10 +58,9 @@ def calc_eye_size(landmarks):
 def calc_mouth_distance(landmarks):
     l_mouse_corner_x = landmarks[61].x
     r_mouse_corner_x = landmarks[291].x
-    l_face_x = np.mean([landmarks[i].x for i in [162, 127, 234, 93]])
-    r_face_x = np.mean([landmarks[i].x for i in [389, 356, 454, 323]])
-    l_mouth_distance = l_mouse_corner_x - l_face_x
-    r_mouth_distance = r_face_x - r_mouse_corner_x
+    mid_mouse_x = (landmarks[0].x + landmarks[17].x) / 2
+    l_mouth_distance = mid_mouse_x - l_mouse_corner_x
+    r_mouth_distance = r_mouse_corner_x - mid_mouse_x
     return l_mouth_distance, r_mouth_distance
 
 def calc_mouth_eye_distance(landmarks):
@@ -98,30 +97,30 @@ def calc_eyebrow_ratio(landmarks):
 def calc_eyeclosure_ratio(landmarks, landmarks_rest):
     l_eye, r_eye = calc_eye_size(landmarks_rest)
     l_eye_closure, r_eye_closure = calc_eye_size(landmarks)
-    l_eye_diff = l_eye - l_eye_closure
-    r_eye_diff = r_eye - r_eye_closure
+    l_eye_diff = abs(l_eye - l_eye_closure)
+    r_eye_diff = abs(r_eye - r_eye_closure)
     eyeclosure_ratio = min(l_eye_diff, r_eye_diff) / max(l_eye_diff, r_eye_diff)
     return eyeclosure_ratio
 
 def calc_smile_ratio(landmarks, landmarks_rest):
     l_mouth_eye_distance, r_mouth_eye_distance = calc_mouth_eye_distance(landmarks_rest)
     l_mouth_distance_smile, r_mouth_distance_smile = calc_mouth_eye_distance(landmarks)
-    l_mouth_diff = l_mouth_eye_distance - l_mouth_distance_smile
-    r_mouth_diff = r_mouth_eye_distance - r_mouth_distance_smile
+    l_mouth_diff = abs(l_mouth_eye_distance - l_mouth_distance_smile)
+    r_mouth_diff = abs(r_mouth_eye_distance - r_mouth_distance_smile)
     smile_ratio = min(l_mouth_diff, r_mouth_diff) / max(l_mouth_diff, r_mouth_diff)
     return smile_ratio
 
 def calc_snarl_ratio(landmarks, landmarks_rest):
     l_alarbase_snarl, r_alarbase_snarl = calc_alarbase(landmarks)
-    l_alarbase_diff = l_alarbase_snarl - calc_alarbase(landmarks_rest)[0]
-    r_alarbase_diff = r_alarbase_snarl - calc_alarbase(landmarks_rest)[1]
+    l_alarbase_diff = abs(l_alarbase_snarl - calc_alarbase(landmarks_rest)[0])
+    r_alarbase_diff = abs(r_alarbase_snarl - calc_alarbase(landmarks_rest)[1])
     snarl_ratio = min(l_alarbase_diff, r_alarbase_diff) / max(l_alarbase_diff, r_alarbase_diff)
     return snarl_ratio
 
 def calc_lip_pucker_ratio(landmarks, landmarks_rest):
     l_mouth_distance, r_mouth_distance = calc_mouth_distance(landmarks)
-    l_mouth_diff = l_mouth_distance - calc_mouth_distance(landmarks_rest)[0]
-    r_mouth_diff = r_mouth_distance - calc_mouth_distance(landmarks_rest)[1]
+    l_mouth_diff = abs(l_mouth_distance - calc_mouth_distance(landmarks_rest)[0])
+    r_mouth_diff = abs(r_mouth_distance - calc_mouth_distance(landmarks_rest)[1])
     lip_pucker_ratio = min(l_mouth_diff, r_mouth_diff) / max(l_mouth_diff, r_mouth_diff)
     return lip_pucker_ratio
 
@@ -144,47 +143,61 @@ def calc(images):
         mouth_ratio = max(l_mouth_eye_distance, r_mouth_eye_distance) / min(l_mouth_eye_distance, r_mouth_eye_distance)
         if mouth_ratio > 1.1:
             detail['rest symmetry']['mouth'] = 1
-
-        # voluntary symmetryss
+            
+        
+        ratios = {}
         for key, image in images.items():
             if key == "pic_at_rest":
                 continue
             landmarks = landmarker.detect(image).face_landmarks[0]
-            if key == "pic_forehead_wrinkle":
-                eyebrow_ratio = calc_eyebrow_ratio(landmarks)
-                detail['voluntary symmetry']['forehead wrinkle'] = int(5 * eyebrow_ratio) + 1
-            elif key == "pic_eye_closure":
-                eyeclosure_ratio = calc_eyeclosure_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['eye closure'] = int(5 * eyeclosure_ratio) + 1
-            elif key == "pic_smile":
-                smile_ratio = calc_smile_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['smile'] = int(5 * smile_ratio) + 1
-            elif key == "pic_snarl":
-                snarl_ratio = calc_snarl_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['snarl'] = int(5 * snarl_ratio) + 1
-            elif key == "pic_lip_pucker":
-                lip_pucker_ratio = calc_lip_pucker_ratio(landmarks, resting_landmarks)
-                detail['voluntary symmetry']['lip pucker'] = int(5 * lip_pucker_ratio) + 1
+            ratios[key] = {}
+            ratios[key]["forehead_wrinkle"] = calc_eyebrow_ratio(landmarks)
+            ratios[key]["eye_closure"] = calc_eyeclosure_ratio(landmarks, resting_landmarks)
+            ratios[key]["smile"] = calc_smile_ratio(landmarks, resting_landmarks)
+            ratios[key]["snarl"] = calc_snarl_ratio(landmarks, resting_landmarks)
+            ratios[key]["lip_pucker"] = calc_lip_pucker_ratio(landmarks, resting_landmarks)
+            
+        print(ratios)
+        
+        # safety check
+        for key in ratios:
+            for subkey in ratios[key]:
+                if ratios[key][subkey] < 0:
+                    ratios[key][subkey] = 0
+                if ratios[key][subkey] > 1:
+                    ratios[key][subkey] = 1
+
+        # voluntary symmetrys
+        detail['voluntary symmetry']['forehead wrinkle'] = math.ceil(5 * ratios["pic_forehead_wrinkle"]["forehead_wrinkle"])
+        detail['voluntary symmetry']['eye closure'] = math.ceil(5 * ratios["pic_eye_closure"]["eye_closure"])
+        detail['voluntary symmetry']['smile'] = math.ceil(5 * ratios["pic_smile"]["smile"])
+        detail['voluntary symmetry']['snarl'] = math.ceil(5 * ratios["pic_snarl"]["snarl"])
+        detail['voluntary symmetry']['lip pucker'] = math.ceil(5 * ratios["pic_lip_pucker"]["lip_pucker"])
         
         # synkinesis
-        for key, image in images.items():
-            if key == "pic_at_rest":
-                continue
-            landmarks = landmarker.detect(image).face_landmarks[0]
-            ratios = {
-                "forehead_wrinkle": calc_eyebrow_ratio(landmarks),
-                "eye_closure": calc_eyeclosure_ratio(landmarks, resting_landmarks),
-                "smile": calc_smile_ratio(landmarks, resting_landmarks),
-                "snarl": calc_snarl_ratio(landmarks, resting_landmarks),
-                "lip_pucker": calc_lip_pucker_ratio(landmarks, resting_landmarks)
-            }
-            other_ratios = [ratio for k, ratio in ratios.items() if k != key.replace("pic_", '')]
-            min_ratio = min(other_ratios)
-            detail['synkinesis'][key.replace("pic_", '')] = int(3 * (1 - min_ratio))
+        min_ratio = min([ratios["pic_forehead_wrinkle"][key] for key in ratios["pic_forehead_wrinkle"] if key != "forehead_wrinkle"])
+        min_ratio = 0.6 if min_ratio > 0.6 else min_ratio
+        detail['synkinesis']['forehead_wrinkle'] = math.ceil(5 * (0.6 - min_ratio))
+        
+        min_ratio = min([ratios["pic_eye_closure"][key] for key in ratios["pic_eye_closure"] if key != "eye_closure"])
+        min_ratio = 0.6 if min_ratio > 0.6 else min_ratio
+        detail['synkinesis']['eye_closure'] = math.ceil(5 * (0.6 - min_ratio))
+        
+        min_ratio = min([ratios["pic_smile"][key] for key in ratios["pic_smile"] if key != "smile"])
+        min_ratio = 0.6 if min_ratio > 0.6 else min_ratio
+        detail['synkinesis']['smile'] = math.ceil(5 * (0.6 - min_ratio))
+        
+        min_ratio = min([ratios["pic_snarl"][key] for key in ratios["pic_snarl"] if key != "snarl"])
+        min_ratio = 0.6 if min_ratio > 0.6 else min_ratio
+        detail['synkinesis']['snarl'] = math.ceil(5 * (0.6 - min_ratio))
+        
+        min_ratio = min([ratios["pic_lip_pucker"][key] for key in ratios["pic_lip_pucker"] if key != "lip_pucker"])
+        min_ratio = 0.6 if min_ratio > 0.6 else min_ratio
+        detail['synkinesis']['lip_pucker'] = math.ceil(5 * (0.6 - min_ratio))
 
     return detail
 
 if __name__ == "__main__":
-    result, detail = detect("../test/pic/")
+    result, detail = detect("../test/pic2/")
     print(result)
     print(detail)

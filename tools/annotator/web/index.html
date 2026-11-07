@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="本地面部动作视频标注，保存动作区间、患者分组和研究评分。">
+  <title>FPHelper · 视频标注</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brandmark" aria-hidden="true">fp</span><div><strong>FPHelper <span>视频标注</span></strong><small>动作时间 · 质量 · 患者分组</small></div></div>
+  <div class="header-actions"><span class="local-badge"><i></i>本机运行</span><span id="save-status" class="save-status" aria-live="polite">正在连接…</span><button id="import-button" class="button secondary">导入</button><button id="export-button" class="button secondary">导出 ↗</button><button id="help-button" class="icon-button" title="使用说明与快捷键" aria-label="使用说明">?</button></div>
+</header>
+<div id="connection-error" class="connection-error" hidden></div>
+<div id="dataset-warning" class="dataset-warning" hidden></div>
+<div class="workspace">
+  <aside class="library panel" aria-label="视频列表">
+    <div class="library-header"><div class="eyebrow">DATASET</div><h1>视频资料 <span id="video-count">—</span></h1><p id="dataset-label">正在读取本地目录</p>
+      <div class="progress-summary"><span id="dataset-progress">0 / 0 已完成</span><span id="progress-percent">0%</span></div><div class="progress-track"><div id="progress-bar"></div></div>
+      <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索文件名、患者组…" aria-label="搜索视频"></label>
+      <select id="filter" aria-label="筛选视频"><option value="all">全部视频</option><option value="unannotated">尚未标注</option><option value="draft">草稿</option><option value="needs_review">待复核</option><option value="complete">已完成</option><option value="unassigned">未分配患者组</option></select>
+    </div>
+    <div id="video-list" class="video-list" role="list"></div>
+    <footer class="library-footer"><span class="privacy-dot"></span>视频只读 · 标注自动保存到本机</footer>
+  </aside>
+
+  <main class="main-column">
+    <section class="player-card panel">
+      <div class="section-heading"><div><div class="eyebrow">VIDEO WORKSPACE</div><h2 id="current-name">选择视频开始标注</h2></div><span id="record-status" class="status-badge">未标注</span></div>
+      <div class="video-stage" id="video-stage">
+        <video id="video" preload="none" playsinline controls hidden></video>
+        <div id="player-placeholder" class="player-placeholder"><div class="camera-glyph" aria-hidden="true">▷</div><h3>在本机查看，逐段确认动作</h3><p>载入后可标记起始、峰值和结束时间</p><button id="load-video" class="button primary" disabled>载入当前视频</button></div>
+      </div>
+      <div class="playback-toolbar"><div class="playback-buttons"><button id="step-back" class="icon-button" title="后退 0.04 秒（←）" aria-label="后退 0.04 秒">−.04</button><button id="play" class="play-button" title="播放／暂停（空格）" aria-label="播放或暂停">▶</button><button id="step-forward" class="icon-button" title="前进 0.04 秒（→）" aria-label="前进 0.04 秒">+.04</button><span class="timecode"><b id="current-time">00:00.000</b><span>/</span><span id="duration">—</span></span></div><div class="playback-options"><label><span class="sr-only">播放速度</span><select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><button id="loop" class="button small secondary" aria-pressed="false">↻ 循环本动作</button></div></div>
+      <input id="scrubber" class="scrubber" aria-label="视频播放位置" type="range" min="0" max="1" value="0" step="0.001">
+      <div class="player-footnote"><span id="video-meta">视频将在点击载入后读取</span><span>细步为时间步进，变帧率视频不等同于严格逐帧</span></div>
+    </section>
+
+    <section class="timeline-card panel"><div class="section-heading"><div><div class="eyebrow">ACTION TIMELINE</div><h2>六阶段动作区间 <span id="action-count">0 / 6</span></h2></div><label class="checkbox-label"><input type="checkbox" id="show-reference">显示模型参考窗口</label></div><div class="timeline-legend"><span><i class="legend-range"></i>人工区间</span><span><i class="legend-peak"></i>峰值／代表帧</span><span><i class="legend-reference"></i>模型等分窗口，仅供参考</span></div><div id="timeline" class="timeline"></div><p class="subtle">点击动作切换编辑，点击轨道定位。区间标注与模型参考窗口核验分别保存。</p></section>
+    <section class="bottom-card panel"><div id="draft-banner" class="draft-banner" hidden></div><div class="record-nav"><button id="previous-video" class="button secondary">← 上一条</button><span id="position">—</span><div><button id="undo" class="button secondary" title="撤销本页修改（⌘/Ctrl+Z）">撤销</button><button id="history-button" class="button secondary">历史版本</button><button id="review-record" class="button secondary">标记待复核</button><button id="complete-record" class="button primary">完成本条 ✓</button><button id="next-video" class="button secondary">下一条 →</button></div></div></section>
+  </main>
+
+  <aside class="editor panel" aria-label="标注编辑器"><div class="tabs" role="tablist"><button class="tab active" data-tab="actions" role="tab" aria-selected="true">动作</button><button class="tab" data-tab="metadata" role="tab" aria-selected="false">基本信息</button><button class="tab" data-tab="scores" role="tab" aria-selected="false">独立评分</button></div>
+    <div id="tab-actions" class="tab-panel"><div class="action-heading"><span id="phase-number">01</span><div><div class="eyebrow">CURRENT ACTION</div><h2 id="phase-title">自然放松</h2></div><div class="phase-arrows"><button id="previous-phase" class="icon-button" aria-label="上一个动作">‹</button><button id="next-phase" class="icon-button" aria-label="下一个动作">›</button></div></div>
+      <label class="field">动作情况<select id="presence"><option value="unreviewed">待判断</option><option value="present">已出现</option><option value="missing">缺少动作</option><option value="uncertain">无法判断</option></select></label>
+      <p class="subtle compact">运动幅度很小不等同于漏做动作，请结合整个执行过程判断。</p>
+      <div id="time-fields" class="time-fields"></div>
+      <details id="hold-details"><summary>保持区间 <span>可选</span></summary><div id="hold-fields" class="time-fields"></div></details>
+      <button id="preview-action" class="button secondary full">▷ 预览本动作区间</button>
+      <div id="action-errors" class="inline-errors" aria-live="polite"></div><button id="confirm-action" class="button primary full">确认本动作</button>
+      <label class="checkbox-label auto-next"><input id="auto-next" type="checkbox">确认后切换下一个动作</label>
+      <div class="divider"></div><label class="field">本动作备注<textarea id="action-notes" rows="3" placeholder="例如：动作执行不完整、需人工复核…"></textarea></label><div class="field"><span>本动作质量标记</span><div id="action-quality" class="quality-chips"></div></div>
+      <details class="legacy-details"><summary>核验既有模型窗口</summary><p class="subtle">现有模型使用六个等分窗口。只有实际检查了该模型窗口，确认其中包含对应动作，才勾选下项；人工区间确认不会自动勾选。</p><button id="preview-reference" class="button secondary small full">▷ 查看该模型窗口</button><label class="checkbox-label"><input id="legacy-verified" type="checkbox">已人工核验模型窗口中的对应动作</label><label class="field">核验方法<textarea id="legacy-method" rows="2" placeholder="例如：逐段播放等分窗口，核对动作内容"></textarea></label></details>
+    </div>
+    <div id="tab-metadata" class="tab-panel" hidden><h2>基本信息</h2><label class="field">标注人代号<input id="annotator-id" maxlength="80" placeholder="例如 reviewer01"></label><label class="field">匿名患者组<input id="patient-group" maxlength="64" placeholder="例如 P001；未知可留空"></label><p class="subtle compact">同一患者不同访视填写相同代号。每段视频仍保留独立评估；未知时不自动生成患者身份。</p><label class="field">患者患侧<select id="affected-side"><option value="unknown">尚未确认</option><option value="left">患者左侧</option><option value="right">患者右侧</option><option value="bilateral">双侧</option><option value="none">无明确患侧</option></select></label><p id="source-side" class="subtle compact"></p><label class="field">成片是否镜像<select id="mirrored"><option value="unknown">尚未确认</option><option value="yes">是</option><option value="no">否</option></select></label><label class="field">摄像头<select id="camera"><option value="unknown">未知</option><option value="front">前置</option><option value="rear">后置</option></select></label><p class="subtle compact">前置摄像头与成片镜像分别记录。</p><div class="field"><span>整段视频质量</span><div id="global-quality" class="quality-chips"></div></div><label class="field">整段备注<textarea id="record-notes" rows="4" placeholder="记录协议、画面或数据来源的复核事项"></textarea></label><button id="data-info" class="button secondary full">查看本地目录与文件指纹</button></div>
+    <div id="tab-scores" class="tab-panel" hidden><h2>独立 Sunnybrook 评分</h2><p class="subtle">可选记录。与原医生 CSV 分开保存，不覆盖 doctor01 等已有标注；未评分保持空白。</p><label class="checkbox-label"><input id="scores-enabled" type="checkbox">记录本条独立评分</label><label class="field">评分者代号<input id="rater-id" maxlength="80" placeholder="先填写评分者代号"></label><div id="score-fields"></div><div class="score-summary"><span>完整分项</span><b id="score-filled">0 / 13</b><span>研究总分</span><strong id="score-total">—</strong><p id="score-reason"></p></div><label class="field">评分备注<textarea id="score-notes" rows="3"></textarea></label></div>
+  </aside>
+</div>
+<div id="toast" class="toast" role="status" hidden></div><input id="import-file" type="file" accept=".json,.csv" hidden>
+<dialog id="dialog"><div class="dialog-heading"><h2 id="dialog-title"></h2><button id="dialog-close" class="icon-button" aria-label="关闭">×</button></div><div id="dialog-body"></div></dialog>
+<script type="module" src="/app.js"></script>
+</body></html>

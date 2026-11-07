@@ -164,3 +164,11 @@ cython_debug/
 *.jpg
 test/
 .DS_Store
+
+# Local clinical data derivatives, models and experiment caches
+artifacts/
+
+# Local runtime output
+nohup.out
+db.sqlite3-wal
+db.sqlite3-shm

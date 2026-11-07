@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fphelper-algorithm"
+version = "0.1.0"
+description = "Local Sunnybrook video scoring and reproducible research validation"
+requires-python = ">=3.12,<3.13"
+dependencies = ["numpy", "scipy", "scikit-learn", "joblib", "threadpoolctl", "matplotlib"]
+
+[project.optional-dependencies]
+video = ["torch", "torchvision", "mediapipe", "pillow"]
+
+[project.scripts]
+fphelper-train = "fphelper.cli:main"
+
+[tool.setuptools]
+packages = ["fphelper", "fphelper.legacy_v0", "fphelper.sb0_v1_baseline", "fphelper.sb1_v1_geometry", "fphelper.sb2_v1_appearance", "fphelper.sb3_v1_fusion"]
+
+[tool.setuptools.package-dir]
+fphelper = "algorithm/shared/fphelper"
+"fphelper.legacy_v0" = "algorithm/legacy_v0"
+"fphelper.sb0_v1_baseline" = "algorithm/sb0_v1_baseline"
+"fphelper.sb1_v1_geometry" = "algorithm/sb1_v1_geometry"
+"fphelper.sb2_v1_appearance" = "algorithm/sb2_v1_appearance"
+"fphelper.sb3_v1_fusion" = "algorithm/sb3_v1_fusion"
+
+[tool.setuptools.package-data]
+"fphelper.legacy_v0" = ["*.task", "*.png", "config.json", "README.md"]
+"fphelper.sb0_v1_baseline" = ["config.json", "README.md"]
+"fphelper.sb1_v1_geometry" = ["config.json", "README.md"]
+"fphelper.sb2_v1_appearance" = ["config.json", "README.md"]
+"fphelper.sb3_v1_fusion" = ["config.json", "README.md"]

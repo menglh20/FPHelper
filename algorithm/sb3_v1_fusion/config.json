@@ -1,0 +1,21 @@
+{
+  "family": "SB3",
+  "version": "sb3_v1_fusion",
+  "implementation_version": 1,
+  "entry_module": "fphelper.sb3_v1_fusion.model",
+  "feature_family": "geometry_and_appearance",
+  "shared_core": "../shared/fphelper",
+  "score_schema": "sunnybrook-13",
+  "total_formula": "4*sum(voluntary)-5*sum(rest)-sum(synkinesis)",
+  "feature_protocol": "relative-six-phases-ffmpeg-pts-v1",
+  "projection": {
+    "standardize_on_training_only": true,
+    "pca_dimensions_per_phase": 16
+  },
+  "classifier": "13 independent ordered logistic regression heads",
+  "regularization_candidates": [
+    0.01,
+    0.1,
+    1.0
+  ]
+}

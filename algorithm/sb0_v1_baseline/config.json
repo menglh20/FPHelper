@@ -1,0 +1,10 @@
+{
+  "family": "SB0",
+  "version": "sb0_v1_baseline",
+  "implementation_version": 1,
+  "entry_module": "fphelper.sb0_v1_baseline.model",
+  "feature_family": "none",
+  "shared_core": "../shared/fphelper",
+  "score_schema": "sunnybrook-13",
+  "total_formula": "4*sum(voluntary)-5*sum(rest)-sum(synkinesis)"
+}

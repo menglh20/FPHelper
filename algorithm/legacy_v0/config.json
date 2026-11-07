@@ -1,0 +1,13 @@
+{
+  "family": "LEGACY",
+  "version": "legacy_v0",
+  "implementation_version": 0,
+  "image_entry": "Detect.detect",
+  "video_entry": "Recognize.recognize",
+  "source_sha256": {
+    "face_landmarker.task": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "Recognize.py": "b89f9959d8354d14fb26a2f14e5c7a64deb20bbbd4632dfb01a71249d68a2c95",
+    "Detect.py": "ab9d885b8cbefd2e20d667d02c3bc7a644ca1ded546b8638ef289c5e5fba008a",
+    "mediapipe_face_landmark_fullsize.png": "253e659bb16df88073483b8c0f99e0c0a299b6d4a084955b93e04f896e3d40d3"
+  }
+}
